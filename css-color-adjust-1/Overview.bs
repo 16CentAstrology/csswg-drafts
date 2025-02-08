@@ -9,12 +9,14 @@ TR: https://www.w3.org/TR/css-color-adjust-1/
 ED: https://drafts.csswg.org/css-color-adjust-1/
 Previous Version: https://www.w3.org/TR/2022/CRD-css-color-adjust-1-20220614/
 Implementation Report: https://wpt.fyi/results/css/css-color-adjust?label=experimental&label=master&aligned
-Editor: Elika J. Etemad / fantasai, Invited Expert, http://fantasai.inkedblade.net/contact, w3cid 35400
+Editor: Elika J. Etemad / fantasai, Apple, http://fantasai.inkedblade.net/contact, w3cid 35400
 Editor: Rossen Atanassov, Microsoft, ratan@microsoft.com, w3cid 49885
 Editor: Rune Lillesveen, Google, futhark@google.com, w3cid 45291
 Editor: Tab Atkins Jr., Google, http://www.xanthir.com/contact/, w3cid 42199
 Abstract: This module introduces a model and controls over automatic color adjustment by the user agent to handle user preferences, such as "Dark Mode", contrast adjustment, or specific desired color schemes.
 Ignored Terms: -webkit-tap-highlight-color, name, the head element
+WPT Path Prefix: css/css-color-adjust/
+WPT Display: open
 </pre>
 <pre class='link-defaults'>
 spec:css2; type:dfn; text:canvas
@@ -87,9 +89,7 @@ Preferred Color Schemes {#preferred}
 	for user interface elements.
 	This <dfn export>color scheme</dfn> is typically reflected in the user agent's rendering
 	of its navigation interface as well as in-page interface elements
-	such as form controls and scrollbars,
-	and is expected to also be reflected
-	in the values of the CSS [=system colors=].
+	such as form controls and scrollbars.
 
 	A UA can also allow the user to indicate a preference
 	for the [=color scheme=] of the pages they view,
@@ -142,6 +142,30 @@ Opting Into a Preferred Color Scheme: the 'color-scheme' property {#color-scheme
 	Animation type: discrete
 	</pre>
 
+	<wpt>
+		parsing/color-scheme-computed.html
+		parsing/color-scheme-invalid.html
+		parsing/color-scheme-valid.html
+		rendering/dark-color-scheme/color-scheme-change-checkbox.html
+		rendering/dark-color-scheme/color-scheme-color-property.html
+		rendering/dark-color-scheme/color-scheme-iframe-background-mismatch-alpha.html
+		rendering/dark-color-scheme/color-scheme-iframe-background-mismatch-opaque-cross-origin.sub.html
+		rendering/dark-color-scheme/color-scheme-iframe-background-mismatch-opaque.html
+		rendering/dark-color-scheme/color-scheme-iframe-background-mismatch-used-preferred.html
+		rendering/dark-color-scheme/color-scheme-iframe-background.html
+		rendering/dark-color-scheme/color-scheme-iframe-dynamic.html
+		rendering/dark-color-scheme/color-scheme-iframe-preferred-change.html
+		rendering/dark-color-scheme/color-scheme-iframe-preferred-page-dark.html
+		rendering/dark-color-scheme/color-scheme-iframe-preferred-page-light.html
+		rendering/dark-color-scheme/color-scheme-iframe-preferred.html
+		rendering/dark-color-scheme/color-scheme-link-crash.html
+		rendering/dark-color-scheme/color-scheme-root-background.html
+		rendering/dark-color-scheme/color-scheme-rule-cache.html
+		rendering/dark-color-scheme/color-scheme-system-colors.html
+		rendering/dark-color-scheme/color-scheme-table-border-currentcolor-responsive.html
+		rendering/dark-color-scheme/color-scheme-visited-link-initial.html
+	</wpt>
+
 	While the 'prefers-color-scheme' media feature
 	allows an author to adapt the page’s colors to the user’s preferred color scheme,
 	many parts of the page are not under the author's control
@@ -151,8 +175,7 @@ Opting Into a Preferred Color Scheme: the 'color-scheme' property {#color-scheme
 	These values are negotiated with the user's preferences,
 	resulting in a <dfn export>used color scheme</dfn>
 	that affects things such as
-	the default colors of form controls and scrollbars
-	as well as the used values of the [[css-color-4#css-system-colors|CSS system colors]].
+	the default colors of form controls and scrollbars.
 	(See [[#color-scheme-effect]].)
 
 	Note: Because many pages were authored before color scheme support existed,
@@ -333,7 +356,6 @@ Effects of the Used Color Scheme {#color-scheme-effect}
 	For all elements,
 	the user agent must match the following to the [=used color scheme=]:
 
-	* the used value of the [[css-color-4#css-system-colors|system colors]]
 	* the default colors of scrollbars and other interaction UI
 	* the default colors of form controls and other "specially-rendered" elements
 	* the default colors of other browser-provided UI, such as "spellcheck" underlines
@@ -341,7 +363,6 @@ Effects of the Used Color Scheme {#color-scheme-effect}
 	On the root element,
 	the [=used color scheme=] additionally must affect
 	the surface color of the [=canvas=],
-	the initial value of the '/color' property,
 	and the viewport's scrollbars.
 
 	In order to preserve expected color contrasts,
@@ -551,6 +572,23 @@ Properties Affected by Forced Colors Mode {#forced-colors-properties}
 	UAs may further tweak these <a>forced colors mode</a> heuristics
 	to provide better user experience.
 
+	<div class="example">
+		Authors may still use features such as ''color-mix()'' in [=forced colors mode=].
+		In such cases, the [=computed value=] will behave as it would normally,
+		but the [=used value=] will be overridden with an appropriate [=system color=].
+
+		<pre highlight=css>
+		.example {
+			color: color-mix(in srgb, CanvasText, Canvas);
+		}
+		</pre>
+
+		The [=computed value=] for 'color' will be a 50-50 blend of the ''CanvasText'' and ''Canvas'' [=system colors=].
+		That value will inherit to descendants and be observable via APIs such as {{Element/computedStyleMap()}}.
+
+		The [=used value=] for 'color' will be a system color chosen by the UA, for example ''CanvasText''.
+	</div>
+
 Opting Out of a Forced Color Palette: the 'forced-color-adjust' property {#forced-color-adjust-prop}
 -----------------------------------------------------------------
 
@@ -617,6 +655,13 @@ Opting Out of a Forced Color Palette: the 'forced-color-adjust' property {#force
 	(where it can affect e.g. the canvas background).
 	Note that 'forced-color-adjust' is <em>not</em> propagated from HTML <{body}>.
 
+<wpt>
+	/css/css-forced-color-adjust/inheritance.html
+	/css/css-forced-color-adjust/parsing/forced-color-adjust-computed.html  
+	/css/css-forced-color-adjust/parsing/forced-color-adjust-invalid.html  
+	/css/css-forced-color-adjust/parsing/forced-color-adjust-valid.html
+</wpt>
+
 
 <!--
  ██████   ███████  ██        ███████  ████████             ███    ████████        ██ ██     ██  ██████  ████████
@@ -671,6 +716,10 @@ Ink Economy: the 'print-color-adjust' property {#print-color-adjust}
 	Computed value: specified keyword
 	Animation type: discrete
 	</pre>
+
+	<wpt>
+		parsing/print-color-adjust.html
+	</wpt>
 
 	The 'print-color-adjust' property provides a hint to the user-agent
 	about how it should treat color and style choices
@@ -732,8 +781,14 @@ The 'color-adjust' Shorthand {#color-adjust}
 	to avoid accidentally resetting performance-based color adjustments
 	in other contexts than the one intended.
 
+<wpt>
+	animation/color-scheme-no-interpolation.html
+	animation/forced-color-adjust-no-interpolation.html
+	inheritance.html
+</wpt>
 
-Privacy and Security Considerations {#priv-sec}
+
+Privacy Considerations {#privacy}
 ===================================
 
 	Applying user color preferences via [=color schemes=] or [=forced colors mode=]
@@ -758,7 +813,10 @@ Privacy and Security Considerations {#priv-sec}
 		for discussion on this topic.
 	</div>
 
-	Additionally, it may be possible for an embedded document
+Security Considerations {#security}
+===================================
+
+	It may be possible for an embedded document
 	to use timing attacks to determine whether its own 'color-scheme'
 	matches that of its embedding <{iframe}> or not.
 
